@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, AppView, PrayerTimes } from '../types';
 import { getDailyInspiration } from '../services/geminiService';
-import { Clock, Sun, Moon, MapPin, Gift, CheckCircle, Book, Heart } from 'lucide-react';
+import { Clock, Sun, Moon, MapPin, Gift, CheckCircle, Book, Heart, Share2 } from 'lucide-react';
 
 interface DashboardProps {
   user: User;
@@ -23,6 +23,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, prayerTimes }) 
     }
     return "লোড হচ্ছে...";
   });
+
+  const handleShare = async (text: string) => {
+    if (!text || text === "লোড হচ্ছে...") return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Daily Muslim Inspiration',
+          text: text,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      navigator.clipboard.writeText(text);
+      alert('অনুপ্রেরণা ক্লিপবোর্ডে কপি করা হয়েছে!');
+    }
+  };
 
   useEffect(() => {
     // Only fetch if we don't have a valid inspiration or it's old
@@ -80,10 +98,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onNavigate, prayerTimes }) 
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <h4 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2 mb-3">
-          <Sun size={14} className="text-amber-500" /> আজকের অনুপ্রেরণা
-        </h4>
+      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative group">
+        <div className="flex justify-between items-center mb-3">
+          <h4 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2">
+            <Sun size={14} className="text-amber-500" /> আজকের অনুপ্রেরণা
+          </h4>
+          <button 
+            onClick={() => handleShare(inspiration)}
+            className="text-slate-400 hover:text-emerald-600 transition-colors p-1"
+            title="Share"
+          >
+            <Share2 size={16} />
+          </button>
+        </div>
         <p className="text-slate-700 leading-relaxed italic font-medium">"{inspiration}"</p>
       </div>
 

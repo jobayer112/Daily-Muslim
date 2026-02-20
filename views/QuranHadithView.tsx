@@ -1,53 +1,96 @@
 
 import React, { useState } from 'react';
 import { getSurahDetails, getHadithDetails } from '../services/geminiService';
-import { Gojol } from '../types';
-import { Search, Loader2, ChevronLeft, BookOpen, ScrollText, Quote, Music } from 'lucide-react';
+import { Gojol, Surah, Hadith } from '../types';
+import { Search, Loader2, ChevronLeft, BookOpen, ScrollText, Quote, Music, Share2 } from 'lucide-react';
 
 interface QuranHadithViewProps {
   gojols: Gojol[];
+  surahs: Surah[];
+  hadiths: Hadith[];
+  setSurahs: (surahs: Surah[]) => void;
+  setHadiths: (hadiths: Hadith[]) => void;
 }
 
-const QuranHadithView: React.FC<QuranHadithViewProps> = ({ gojols }) => {
+const QuranHadithView: React.FC<QuranHadithViewProps> = ({ gojols, surahs, hadiths, setSurahs, setHadiths }) => {
   const [activeTab, setActiveTab] = useState<'quran' | 'hadith' | 'gojol'>('quran');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSurah, setSelectedSurah] = useState<{name: string, index: number} | null>(null);
-  const [selectedHadithCategory, setSelectedHadithCategory] = useState<string | null>(null);
+  const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
+  const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
   const [selectedGojol, setSelectedGojol] = useState<Gojol | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const surahs = [ "Al-Fatiha", "Al-Baqarah", "Al-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus", "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha", "Al-Anbiya", "Al-Hajj", "Al-Mu'minun", "An-Nur", "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas", "Al-Ankabut", "Ar-Rum", "Luqman", "As-Sajdah", "Al-Ahzab", "Saba", "Fatir", "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir", "Fussilat", "Ash-Shura", "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiyah", "Al-Ahqaf", "Muhammad", "Al-Fath", "Al-Hujurat", "Qaf", "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman", "Al-Waqi'ah", "Al-Hadid", "Al-Mujadilah", "Al-Hashr", "Al-Mumtahanah", "As-Saff", "Al-Jumu'ah", "Al-Munafiqun", "At-Taghabun", "At-Talaq", "At-Tahrim", "Al-Mulk", "Al-Qalam", "Al-Haqqah", "Al-Ma'arij", "Nuh", "Al-Jinn", "Al-Muzzammil", "Al-Muddaththir", "Al-Qiyamah", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at", "Abasa", "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj", "At-Tariq", "Al-A'la", "Al-Ghashiyah", "Al-Fajr", "Al-Balad", "Ash-Shams", "Al-Layl", "Ad-Duha", "Ash-Sharh", "At-Tin", "Al-'Alaq", "Al-Qadr", "Al-Bayyinah", "Az-Zalzalah", "Al-'Adiyat", "Al-Qari'ah", "At-Takathur", "Al-'Asr", "Al-Humazah", "Al-Fil", "Quraysh", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr", "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas" ];
-  const hadithCategories = [ "ঈমান", "সালাত", "যাকাত", "সাওম", "হজ্জ", "আখলাক", "বিবাহ", "জিহাদ", "রিযিক", "কিয়ামত", "জান্নাত", "জাহান্নাম", "পিতা-মাতা", "সবর", "তাকওয়া" ];
-
-  const filteredSurahs = surahs.filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
-  const filteredHadith = hadithCategories.filter(h => h.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredSurahs = surahs.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredHadith = hadiths.filter(h => h.category.toLowerCase().includes(searchTerm.toLowerCase()));
   const filteredGojols = gojols.filter(g => g.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  const handleSelectSurah = async (name: string, index: number) => {
-    setSelectedSurah({name, index: index + 1});
+  const handleSelectSurah = async (surah: Surah) => {
+    setSelectedSurah(surah);
+    
+    // If we already have content, use it (Fast Load)
+    if (surah.content) {
+      setResult(surah.content);
+      return;
+    }
+
     setLoading(true);
-    const data = await getSurahDetails(name);
+    const data = await getSurahDetails(surah.name);
     setResult(data);
+    
+    // Save to state for next time (Fast Load)
+    const updatedSurahs = surahs.map(s => s.id === surah.id ? { ...s, content: data } : s);
+    setSurahs(updatedSurahs);
+    
     setLoading(false);
   };
 
-  const handleSelectHadith = async (category: string) => {
-    setSelectedHadithCategory(category);
+  const handleSelectHadith = async (hadith: Hadith) => {
+    setSelectedHadith(hadith);
+    
+    // If we already have content, use it (Fast Load)
+    if (hadith.content) {
+      setResult(hadith.content);
+      return;
+    }
+
     setLoading(true);
-    const data = await getHadithDetails(category);
+    const data = await getHadithDetails(hadith.category);
     setResult(data);
+    
+    // Save to state for next time (Fast Load)
+    const updatedHadiths = hadiths.map(h => h.id === hadith.id ? { ...h, content: data } : h);
+    setHadiths(updatedHadiths);
+    
     setLoading(false);
   };
 
   const resetSelection = () => {
     setSelectedSurah(null);
-    setSelectedHadithCategory(null);
+    setSelectedHadith(null);
     setSelectedGojol(null);
     setResult(null);
   };
 
-  if (selectedSurah || selectedHadithCategory || selectedGojol) {
+  const handleShare = async (text: string) => {
+    if (!text) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: selectedSurah?.name || selectedHadith?.category || selectedGojol?.title || 'Daily Muslim',
+          text: text,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      navigator.clipboard.writeText(text);
+      alert('কন্টেন্ট ক্লিপবোর্ডে কপি করা হয়েছে!');
+    }
+  };
+
+  if (selectedSurah || selectedHadith || selectedGojol) {
     return (
       <div className="fixed inset-0 bg-white z-[60] flex flex-col animate-in slide-in-from-right duration-300">
         {/* Full Screen Detail Header */}
@@ -56,13 +99,21 @@ const QuranHadithView: React.FC<QuranHadithViewProps> = ({ gojols }) => {
             <ChevronLeft size={24} />
           </button>
           <div className="flex-1">
-            <h2 className="text-lg font-black truncate">{selectedSurah?.name || selectedHadithCategory || selectedGojol?.title}</h2>
+            <h2 className="text-lg font-black truncate">{selectedSurah?.name || selectedHadith?.category || selectedGojol?.title}</h2>
             <p className="text-[10px] opacity-80 font-bold uppercase tracking-widest">
-              {selectedSurah ? `পবিত্র কুরআন (${selectedSurah.index})` : selectedHadithCategory ? 'আল-হাদীস' : 'ইসলামিক গজল'}
+              {selectedSurah ? `পবিত্র কুরআন (${selectedSurah.index})` : selectedHadith ? 'আল-হাদীস' : 'ইসলামিক গজল'}
             </p>
           </div>
-          <div className="bg-white/20 p-2 rounded-xl">
-             {selectedSurah ? <ScrollText size={20} /> : selectedHadithCategory ? <Quote size={20} /> : <Music size={20} />}
+          <div className="bg-white/20 p-2 rounded-xl flex items-center gap-2">
+             <button 
+               onClick={() => handleShare(result || selectedGojol?.lyrics || '')}
+               className="hover:bg-white/20 p-1 rounded-lg transition-colors"
+               title="Share"
+             >
+               <Share2 size={18} />
+             </button>
+             <div className="w-[1px] h-4 bg-white/20 mx-1"></div>
+             {selectedSurah ? <ScrollText size={20} /> : selectedHadith ? <Quote size={20} /> : <Music size={20} />}
           </div>
         </div>
 
@@ -76,19 +127,50 @@ const QuranHadithView: React.FC<QuranHadithViewProps> = ({ gojols }) => {
           ) : (
             <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
               <div className="prose prose-emerald max-w-none">
-                {(result || selectedGojol?.lyrics || "তথ্য পাওয়া যায়নি।").split('\n').map((line, i) => {
-                  const isArabic = /[\u0600-\u06FF]/.test(line);
-                  return (
-                    <p 
-                      key={i} 
-                      className={`${isArabic 
-                        ? 'arabic text-right text-3xl md:text-4xl text-emerald-900 leading-[2] mt-6 mb-4 bg-emerald-50/50 p-4 rounded-2xl' 
-                        : 'text-slate-800 text-base md:text-lg leading-relaxed mb-4 font-medium'}`}
-                    >
-                      {line}
-                    </p>
-                  );
-                })}
+                {selectedHadith ? (
+                  // Specialized rendering for Hadiths to allow individual sharing
+                  (result || "হাদীসের তথ্য পাওয়া যায়নি।").split(/\n(?=\d+\.)/).map((hadithBlock, i) => (
+                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6 relative group">
+                      <div className="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleShare(hadithBlock)}
+                          className="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all"
+                          title="Share this Hadith"
+                        >
+                          <Share2 size={16} />
+                        </button>
+                      </div>
+                      {hadithBlock.split('\n').map((line, j) => {
+                        const isArabic = /[\u0600-\u06FF]/.test(line);
+                        return (
+                          <p 
+                            key={j} 
+                            className={`${isArabic 
+                              ? 'arabic text-right text-2xl md:text-3xl text-emerald-900 leading-[1.8] mt-4 mb-2 bg-emerald-50/30 p-3 rounded-xl' 
+                              : 'text-slate-800 text-sm md:text-base leading-relaxed mb-2 font-medium'}`}
+                          >
+                            {line}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  ))
+                ) : (
+                  // Standard rendering for Quran and Gojol
+                  (result || selectedGojol?.lyrics || "তথ্য পাওয়া যায়নি।").split('\n').map((line, i) => {
+                    const isArabic = /[\u0600-\u06FF]/.test(line);
+                    return (
+                      <p 
+                        key={i} 
+                        className={`${isArabic 
+                          ? 'arabic text-right text-3xl md:text-4xl text-emerald-900 leading-[2] mt-6 mb-4 bg-emerald-50/50 p-4 rounded-2xl' 
+                          : 'text-slate-800 text-base md:text-lg leading-relaxed mb-4 font-medium'}`}
+                      >
+                        {line}
+                      </p>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -144,16 +226,16 @@ const QuranHadithView: React.FC<QuranHadithViewProps> = ({ gojols }) => {
       <div className="grid grid-cols-1 gap-1 px-1">
         {activeTab === 'quran' && filteredSurahs.map((s, idx) => (
           <button
-            key={s}
-            onClick={() => handleSelectSurah(s, surahs.indexOf(s))}
+            key={s.id}
+            onClick={() => handleSelectSurah(s)}
             className="group bg-white py-1.5 px-4 rounded-xl border border-slate-50 shadow-sm hover:border-emerald-500 hover:shadow-md transition-all flex items-center justify-between"
           >
             <div className="flex items-center space-x-2.5">
               <div className="w-5 h-5 bg-emerald-50 rounded-md flex items-center justify-center text-emerald-600 font-black text-[8px] group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                {surahs.indexOf(s) + 1}
+                {s.index}
               </div>
               <div className="text-left">
-                <p className="font-bold text-slate-800 text-[11px] leading-none">{s}</p>
+                <p className="font-bold text-slate-800 text-[11px] leading-none">{s.name}</p>
               </div>
             </div>
             <ChevronLeft className="text-slate-200 rotate-180 group-hover:text-emerald-500 transition-colors" size={12} />
@@ -162,7 +244,7 @@ const QuranHadithView: React.FC<QuranHadithViewProps> = ({ gojols }) => {
 
         {activeTab === 'hadith' && filteredHadith.map((h, idx) => (
           <button
-            key={h}
+            key={h.id}
             onClick={() => handleSelectHadith(h)}
             className="group bg-white py-1.5 px-4 rounded-xl border border-slate-50 shadow-sm hover:border-amber-500 hover:shadow-md transition-all flex items-center justify-between"
           >
@@ -171,7 +253,7 @@ const QuranHadithView: React.FC<QuranHadithViewProps> = ({ gojols }) => {
                 <Quote size={10} />
               </div>
               <div className="text-left">
-                <p className="font-bold text-slate-800 text-[11px] leading-none">{h}</p>
+                <p className="font-bold text-slate-800 text-[11px] leading-none">{h.category}</p>
               </div>
             </div>
             <ChevronLeft className="text-slate-200 rotate-180 group-hover:text-amber-500 transition-colors" size={12} />

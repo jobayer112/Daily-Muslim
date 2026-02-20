@@ -14,7 +14,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, onLogout }) =>
   const [tempName, setTempName] = useState(user.name);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const referralLink = `https://dailymuslim.app/ref/${user.referralCode}`;
+  const referralLink = `https://dailymuslim.vercel.app/ref/${user.referralCode}`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
