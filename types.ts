@@ -55,6 +55,19 @@ export interface Gojol {
   lyrics: string;
 }
 
+export interface Surah {
+  id: string;
+  name: string;
+  index: number;
+  content?: string; // The full text of the Surah
+}
+
+export interface Hadith {
+  id: string;
+  category: string;
+  content?: string; // The text of the Hadiths in this category
+}
+
 export type AppView = 'home' | 'tasks' | 'quran' | 'store' | 'ads' | 'profile' | 'donate' | 'admin' | 'duas';
 
 export interface PrayerTimes {

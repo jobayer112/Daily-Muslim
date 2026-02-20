@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AppView, User, DhikrTask, AdTask, PrayerTimes, Dua, Gojol, RewardItem } from './types';
-import { INITIAL_DHIKR_TASKS, INITIAL_PRAYER_TIMES, REWARDS } from './constants';
+import { AppView, User, DhikrTask, AdTask, PrayerTimes, Dua, Gojol, RewardItem, Surah, Hadith } from './types';
+import { INITIAL_DHIKR_TASKS, INITIAL_PRAYER_TIMES, REWARDS, INITIAL_SURAHS, INITIAL_HADITH_CATEGORIES } from './constants';
 import Dashboard from './views/Dashboard';
 import TasksView from './views/TasksView';
 import RewardsView from './views/RewardsView';
@@ -34,6 +34,8 @@ const App: React.FC = () => {
   const [ads, setAds] = useState<AdTask[]>([]);
   const [duas, setDuas] = useState<Dua[]>([]);
   const [gojols, setGojols] = useState<Gojol[]>([]);
+  const [surahs, setSurahs] = useState<Surah[]>([]);
+  const [hadiths, setHadiths] = useState<Hadith[]>([]);
   const [rewards, setRewards] = useState<RewardItem[]>([]);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes>(INITIAL_PRAYER_TIMES);
   const [showNotification, setShowNotification] = useState(false);
@@ -89,6 +91,33 @@ const App: React.FC = () => {
       localStorage.setItem('ni_gojols', JSON.stringify(initialGojols));
     }
 
+    // Load Surahs
+    const savedSurahs = localStorage.getItem('ni_surahs');
+    if (savedSurahs) {
+      setSurahs(JSON.parse(savedSurahs));
+    } else {
+      const initialSurahs: Surah[] = INITIAL_SURAHS.map((name, index) => ({
+        id: `s-${index}`,
+        name,
+        index: index + 1
+      }));
+      setSurahs(initialSurahs);
+      localStorage.setItem('ni_surahs', JSON.stringify(initialSurahs));
+    }
+
+    // Load Hadiths
+    const savedHadiths = localStorage.getItem('ni_hadiths');
+    if (savedHadiths) {
+      setHadiths(JSON.parse(savedHadiths));
+    } else {
+      const initialHadiths: Hadith[] = INITIAL_HADITH_CATEGORIES.map((category, index) => ({
+        id: `h-${index}`,
+        category
+      }));
+      setHadiths(initialHadiths);
+      localStorage.setItem('ni_hadiths', JSON.stringify(initialHadiths));
+    }
+
     // Load Ads
     const savedAds = localStorage.getItem('ni_ads');
     if (savedAds) {
@@ -114,7 +143,7 @@ const App: React.FC = () => {
       const now = new Date();
       const currentDay = now.toDateString();
 
-      Object.entries(prayerTimes).forEach(([name, timeStr]) => {
+      (Object.entries(prayerTimes) as [keyof PrayerTimes, string][]).forEach(([name, timeStr]) => {
         if (!['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].includes(name)) return;
         if (!user.notificationSettings[name as keyof typeof user.notificationSettings]) return;
 
@@ -192,7 +221,7 @@ const App: React.FC = () => {
     switch (currentView) {
       case 'home': return <Dashboard user={user!} onNavigate={setCurrentView} prayerTimes={prayerTimes} />;
       case 'tasks': return <TasksView tasks={tasks} onIncrement={handleIncrementDhikr} />;
-      case 'quran': return <QuranHadithView gojols={gojols} />;
+      case 'quran': return <QuranHadithView gojols={gojols} surahs={surahs} hadiths={hadiths} setSurahs={setSurahs} setHadiths={setHadiths} />;
       case 'duas': return <DuaView duas={duas} />;
       case 'store': return <RewardsView userPoints={user!.points} rewards={rewards} />;
       case 'ads': return <AdsView ads={ads} onVisit={(id) => {
@@ -210,6 +239,8 @@ const App: React.FC = () => {
         rewards={rewards} setRewards={(r) => { setRewards(r); localStorage.setItem('ni_rewards', JSON.stringify(r)); }}
         duas={duas} setDuas={(d) => { setDuas(d); localStorage.setItem('ni_duas', JSON.stringify(d)); }}
         gojols={gojols} setGojols={(g) => { setGojols(g); localStorage.setItem('ni_gojols', JSON.stringify(g)); }}
+        surahs={surahs} setSurahs={(s) => { setSurahs(s); localStorage.setItem('ni_surahs', JSON.stringify(s)); }}
+        hadiths={hadiths} setHadiths={(h) => { setHadiths(h); localStorage.setItem('ni_hadiths', JSON.stringify(h)); }}
       />;
       default: return <Dashboard user={user!} onNavigate={setCurrentView} prayerTimes={prayerTimes} />;
     }
